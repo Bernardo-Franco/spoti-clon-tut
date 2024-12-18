@@ -5,6 +5,8 @@ import fileupload from 'express-fileupload';
 import path from 'path';
 import cors from 'cors';
 import { initializeSocket } from './lib/socket.js';
+import cron from 'node-cron';
+import fs from 'fs';
 
 dotenv.config();
 const PORT = process.env.PORT || 5001;
@@ -45,12 +47,36 @@ app.use(
   })
 );
 
+// cron jobs?
+// delete the residual files in every 1 hour
+const tempDir = path.join(process.cwd(), 'tmp');
+cron.schedule('0 * * * *', () => {
+  if (fs.existSync(tempDir)) {
+    fs.readdir(tempDir, (err, files) => {
+      if (err) {
+        console.log('error', err);
+        return;
+      }
+      for (const file of files) {
+        fs.unlink(path.join(tempDir, file), (err) => {});
+      }
+    });
+  }
+});
+
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/songs', songRoutes);
 app.use('/api/albums', albumRoutes);
 app.use('/api/stats', statsRoutes);
+
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../frontend/dist/index.html'));
+  });
+}
 
 //Error handler
 app.use((err, req, res, next) => {
