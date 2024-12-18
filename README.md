@@ -32,5 +32,3 @@ NODE_ENV=development
 
 CLERK_PUBLISHABLE_KEY=
 CLERK_SECRET_KEY=
-
-note: this project is saved- pre adaptations for deploying.
